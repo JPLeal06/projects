@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VinilManager - Cloud & Discogs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Gerenciador de Vinis</h1>
+            <span id="status-nuvem">Conectado à Nuvem</span>
+        </header>
+        
+        <div class="dashboard">
+            <div class="card">
+                <h3>Faturamento Total</h3>
+                <p id="valor-faturamento">R$ 0,00</p>
+            </div>
+            <div class="card">
+                <h3>Lucro Total</h3>
+                <p id="valor-lucro">R$ 0,00</p>
+            </div>
+            <div class="card">
+                <h3>Vendas Realizadas</h3>
+                <p id="qtd-vendas">0</p>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <h2>Adicionar Novo Disco</h2>
+            
+            <div class="busca-discogs">
+                <input type="text" id="input-discogs" placeholder="Buscar no Discogs (Ex: Abbey Road Beatles)">
+                <button id="btn-buscar-discogs" type="button">Buscar Dados</button>
+            </div>
+
+            <form id="form-disco">
+                <div class="input-group">
+                    <input type="text" id="titulo" placeholder="Título do Álbum" required>
+                    <input type="text" id="artista" placeholder="Artista/Banda" required>
+                </div>
+                <div class="input-group">
+                    <input type="number" id="quantidade" placeholder="Qtd em Estoque" min="1" required>
+                    <input type="number" id="preco-custo" placeholder="Preço Custo (R$)" step="0.01" min="0" required>
+                    <input type="number" id="preco-venda" placeholder="Preço Venda (R$)" step="0.01" min="0" required>
+                </div>
+                <button type="submit" class="btn-adicionar" id="btn-salvar">Salvar no Estoque</button>
+            </form>
+        </div>
+
+        <h2>Meu Acervo</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Artista</th>
+                    <th>Estoque</th>
+                    <th>Preço (Venda)</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-estoque">
+                <tr><td colspan="5" class="empty-message">Carregando dados da nuvem...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script type="module" src="app.js"></script>
+    <div id="toast" class="toast"></div>
+</body>
+</html>
