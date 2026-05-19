@@ -284,7 +284,7 @@ tr:hover td {
 }
 
 /* ==========================================================================
-   REGRAS DE RESPONSIVIDADE (PARA CELULARES E TABLETS)
+   REGRAS DE RESPONSIVIDADE (PARA CELULARES E TABLETS) - CORREÇÃO BRUTA
    ========================================================================== */
 
 @media (max-width: 768px) {
@@ -306,6 +306,7 @@ tr:hover td {
         flex-direction: column;
     }
 
+    /* Essa regra estica os botões de busca e adicionar... */
     input, button {
         width: 100%;
     }
@@ -332,14 +333,10 @@ tr:hover td {
         border: none;
         border-bottom: 1px solid var(--border-dim);
         position: relative;
-        padding-left: 50% !important;
+        padding-left: 50% !important; /* Empurra o texto pra direita */
         text-align: right;
         color: var(--text-main);
-    }
-
-    td:last-child {
-        border-bottom: 0;
-        text-align: center;
+        min-height: 40px; /* Evita que o texto amasse */
     }
 
     td:before {
@@ -354,27 +351,27 @@ tr:hover td {
         color: var(--text-dim);
     }
 
-    /* -- Célula dos Botões de Ação -- */
-    td[data-label="Ações"] {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end; /* Joga os botões para a direita */
-        gap: 10px; /* Espaço entre os botões */
-        padding-left: 15px !important; /* Remove o padding gigante de 50% */
-        padding-right: 0 !important;
+    /* -- CÉLULA DOS BOTÕES (ÚLTIMA CÉLULA) -- */
+    td:last-child {
+        border-bottom: 0;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 10px !important;
+        padding-left: 15px !important; /* Mata o padding de 50% aqui */
+        padding-right: 15px !important;
+    }
+
+    td:last-child:before {
+        position: static !important; /* Tira o "Ações" do absolute para não encavalar */
+        width: auto !important;
+        margin-right: auto !important; /* Joga o texto pra esquerda e botões pra direita */
     }
     
-    td[data-label="Ações"]:before {
-        position: static; /* Tira da posição flutuante */
-        width: auto;
-        margin-right: auto; /* Empurra o rótulo pra esquerda e os botões pra direita */
-    }
-    
-    td[data-label="Ações"] button {
-        margin: 0;
-        flex: none; /* Impede os botões de esticarem */
-        width: auto; /* Define a largura baseada no texto interno */
-        padding: 6px 15px; /* Tamanho confortável para celular */
-        font-size: 0.65rem;
+    td:last-child button {
+        margin: 0 !important;
+        flex: none !important;
+        width: auto !important; /* Mata a regra do width: 100% só para esses botões! */
+        padding: 6px 12px !important;
     }
 }
