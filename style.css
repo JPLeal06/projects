@@ -284,7 +284,7 @@ tr:hover td {
 }
 
 /* ==========================================================================
-   REGRAS DE RESPONSIVIDADE (PARA CELULARES E TABLETS) - TOTALMENTE CORRIGIDO
+   REGRAS DE RESPONSIVIDADE (PARA CELULARES E TABLETS)
    ========================================================================== */
 
 @media (max-width: 768px) {
@@ -321,16 +321,16 @@ tr:hover td {
     }
 
     tr {
-        border: 1px solid var(--border); /* Corrigido de #ccc para a variável */
+        border: 1px solid var(--border);
         margin-bottom: 10px;
-        background: var(--surface);      /* Corrigido de #fff para a variável */
+        background: var(--surface);
         border-radius: 8px;
         padding: 10px;
     }
 
     td {
         border: none;
-        border-bottom: 1px solid var(--border-dim); /* Corrigido de #eee para a variável */
+        border-bottom: 1px solid var(--border-dim);
         position: relative;
         padding-left: 50% !important;
         text-align: right;
@@ -340,7 +340,6 @@ tr:hover td {
     td:last-child {
         border-bottom: 0;
         text-align: center;
-        padding-left: 0 !important;
     }
 
     td:before {
@@ -352,17 +351,30 @@ tr:hover td {
         white-space: nowrap;
         text-align: left;
         font-weight: bold;
-        color: var(--text-dim); /* Corrigido de #555 para a variável */
+        color: var(--text-dim);
     }
-    
+
+    /* -- Célula dos Botões de Ação -- */
     td[data-label="Ações"] {
         display: flex;
-        justify-content: space-around;
-        gap: 10px;
+        align-items: center;
+        justify-content: flex-end; /* Joga os botões para a direita */
+        gap: 10px; /* Espaço entre os botões */
+        padding-left: 15px !important; /* Remove o padding gigante de 50% */
+        padding-right: 0 !important;
+    }
+    
+    td[data-label="Ações"]:before {
+        position: static; /* Tira da posição flutuante */
+        width: auto;
+        margin-right: auto; /* Empurra o rótulo pra esquerda e os botões pra direita */
     }
     
     td[data-label="Ações"] button {
         margin: 0;
-        flex: 1;
+        flex: none; /* Impede os botões de esticarem */
+        width: auto; /* Define a largura baseada no texto interno */
+        padding: 6px 15px; /* Tamanho confortável para celular */
+        font-size: 0.65rem;
     }
 }
