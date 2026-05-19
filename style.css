@@ -569,92 +569,96 @@ tr:hover td {
 }
 
 /* ==========================================================================
-   REGRAS DE RESPONSIVIDADE (PARA CELULARES E TABLETS)
+   REGRAS DE RESPONSIVIDADE (MOBILE) - ATUALIZADO
    ========================================================================== */
-
 @media (max-width: 768px) {
-    /* Ajusta o espaçamento do corpo do site */
-    body {
-        padding: 10px;
-    }
+    /* Ajusta o container geral */
+    body { padding: 10px; }
+    .container { width: 100%; padding: 10px; }
 
-    /* O container principal ocupa a tela toda */
-    .container {
-        width: 100%;
-        padding: 15px;
-    }
-
-    /* O Dashboard (Cards) fica em uma coluna única em vez de lado a lado */
+    /* DASHBOARD: Transforma os 4 cards em uma grade 2x2 */
     .dashboard {
-        grid-template-columns: 1fr;
-        gap: 15px;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
     }
 
-    /* Os formulários (adicionar e buscar) ficam em coluna */
-    .form-group, .busca-discogs {
-        flex-direction: column;
+    /* FORMULÁRIOS: Força tudo a ficar um embaixo do outro */
+    .form-group, .busca-discogs, form div {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
     }
 
+    /* Inputs e botões ocupando 100% da largura da tela */
     input, button {
-        width: 100%;
+        width: 100% !important;
+        margin-bottom: 10px !important;
+        box-sizing: border-box;
     }
 
-    /* TRUQUE PARA A TABELA: Transforma linhas em "cards" no celular */
+    /* TABELA: O Truque dos Cards */
     table, thead, tbody, th, td, tr {
-        display: block;
+        display: block !important;
+        width: 100% !important;
     }
 
-    /* Esconde o cabeçalho real da tabela para não amassar */
+    /* Esconde o cabeçalho original da tabela */
     thead tr {
-        position: absolute;
-        top: -9999px;
-        left: -9999px;
+        display: none !important;
     }
 
+    /* Cada linha da tabela vira um "card" escuro */
     tr {
-        border: 1px solid #ccc;
-        margin-bottom: 10px;
-        background: #fff;
-        border-radius: 8px;
-        padding: 10px;
+        border: 1px solid #333 !important;
+        margin-bottom: 15px !important;
+        background: #111 !important; /* Cor de fundo combinando com o seu Dark Mode */
+        border-radius: 8px !important;
+        padding: 10px !important;
     }
 
+    /* Configuração das células (TÍTULO, ARTISTA, etc) */
     td {
-        border: none;
-        border-bottom: 1px solid #eee;
-        position: relative;
-        padding-left: 50% !important;
-        text-align: right;
+        border: none !important;
+        border-bottom: 1px solid #222 !important;
+        position: relative !important;
+        padding: 10px 10px 10px 45% !important; /* Abre espaço na esquerda pros rótulos */
+        text-align: right !important;
+        font-size: 14px !important;
     }
 
     td:last-child {
-        border-bottom: 0;
-        text-align: center;
-        padding-left: 0 !important;
+        border-bottom: 0 !important;
     }
 
-    /* Usa o 'data-label' do HTML para criar as etiquetas na esquerda */
+    /* Injeta o nome da coluna na esquerda usando o data-label do HTML */
     td:before {
         content: attr(data-label);
         position: absolute;
         left: 10px;
-        width: 45%;
-        padding-right: 10px;
-        white-space: nowrap;
+        top: 10px;
+        width: 40%;
         text-align: left;
         font-weight: bold;
-        color: #555;
+        color: #888;
+        font-size: 12px;
+        text-transform: uppercase;
     }
-    
-    /* Ajusta os botões de ação para ficarem lado a lado no celular */
+
+    /* Botões de Ação na tabela (Vender e Excluir) um embaixo do outro */
     td[data-label="Ações"] {
-        display: flex;
-        justify-content: space-around;
-        gap: 10px;
+        padding-left: 10px !important; /* Tira o recuo */
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 5px;
     }
-    
+
+    td[data-label="Ações"]:before {
+        display: none !important; /* Esconde a palavra "Ações" */
+    }
+
     td[data-label="Ações"] button {
-        margin: 0;
-        flex: 1;
+        margin: 0 !important;
+        padding: 12px !important; /* Botões mais fáceis de clicar com o dedo */
     }
 }
