@@ -1,154 +1,170 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>VinilManager</title>
-
+    <title>Vinil Manager - Acesso Restrito</title>
     <link rel="stylesheet" href="style.css">
-
 </head>
-
 <body>
 
-    <div class="container">
-
-        <header>
-
-            <h1>Gerenciador de Vinis</h1>
-
-            <span id="status-nuvem">Conectado à Nuvem</span>
-
-        </header>
-
-       
-
-        <div class="dashboard">
-
-            <div class="card">
-
-                <h3>Faturamento Total</h3>
-
-                <p id="valor-faturamento">R$ 0,00</p>
-
-            </div>
-
-            <div class="card">
-
-                <h3>Custo Total (Gastos)</h3>
-
-                <p id="valor-custo" style="color: #ff4444;">R$ 0,00</p>
-                
-            </div>
-
-
-            <div class="card">
-
-                <h3>Lucro Total</h3>
-
-                <p id="valor-lucro">R$ 0,00</p>
-
-            </div>
-
-            <div class="card">
-
-                <h3>Vendas Realizadas</h3>
-
-                <p id="qtd-vendas">0</p>
-
-            </div>
-
-        </div>
-
-
-
-        <div class="form-container">
-
-            <h2>Adicionar Novo Disco</h2>
-
-           
-
-            <div class="busca-discogs">
-
-                <input type="text" id="input-discogs" placeholder="Buscar no Discogs (Ex: Abbey Road Beatles)">
-
-                <button id="btn-buscar-discogs" type="button">Buscar Dados</button>
-
-            </div>
-
-
-
-            <form id="form-disco">
-
-                <div class="input-group">
-
-                    <input type="text" id="titulo" placeholder="Título do Álbum" required>
-
-                    <input type="text" id="artista" placeholder="Artista/Banda" required>
-
-                </div>
-
-                <div class="input-group">
-
-                    <input type="number" id="quantidade" placeholder="Qtd em Estoque" min="1" required>
-
-                    <input type="number" id="preco-custo" placeholder="Preço Custo (R$)" step="0.01" min="0" required>
-
-                    <input type="number" id="preco-venda" placeholder="Preço Venda (R$)" step="0.01" min="0" required>
-
-                </div>
-
-                <button type="submit" class="btn-adicionar" id="btn-salvar">Salvar no Estoque</button>
-
+    <div id="login-container" class="login-container">
+        <div class="login-card">
+            <h2>Vinil Manager</h2>
+            <p style="color: #888; font-size: 0.9rem; margin-bottom: 20px;">Área Restrita do Operador</p>
+            <form id="form-login">
+                <input type="email" id="login-email" placeholder="E-mail do Administrador" required>
+                <input type="password" id="login-senha" placeholder="Senha de Acesso" required>
+                <button type="submit" class="btn-principal" style="margin-top: 10px;">Entrar no Sistema</button>
             </form>
-
         </div>
-
-
-
-        <h2>Meu Acervo</h2>
-
-        <table>
-
-            <thead>
-
-                <tr>
-
-                    <th>Título</th>
-
-                    <th>Artista</th>
-
-                    <th>Estoque</th>
-
-                    <th>Preço (Venda)</th>
-
-                    <th>Ações</th>
-
-                </tr>
-
-            </thead>
-
-            <tbody id="tabela-estoque">
-
-                <tr><td colspan="5" class="empty-message">Carregando dados da nuvem...</td></tr>
-
-            </tbody>
-
-        </table>
-
     </div>
 
+    <div id="modal-discogs" class="modal-fullscreen" style="display: none;">
+        <div class="modal-header">
+            <h2>Banco de Dados Discogs</h2>
+            <button id="btn-fechar-modal" class="btn-fechar">Fechar X</button>
+        </div>
+        <div class="modal-body">
+            <div class="busca-avancada">
+                <input type="text" id="input-modal-discogs" placeholder="Digite o nome do álbum, artista ou código..." autocomplete="off">
+            </div>
+            
+            <div id="resultados-modal" class="resultados-grid">
+                <p style="grid-column: 1 / -1; text-align: center; color: #888; margin-top: 40px; font-size: 1.1rem;">
+                    Digite algo acima para pesquisar em milhões de discos.
+                </p>
+            </div>
 
+            <div id="paginacao-discogs" style="display: none; justify-content: center; gap: 15px; margin-top: 30px; padding-bottom: 20px;">
+                <button id="btn-pagina-anterior" class="btn-acao btn-link" style="padding: 10px 20px;" disabled>Anterior</button>
+                <span id="info-pagina" style="align-self: center; color: #aaa; font-weight: bold;">Página 1</span>
+                <button id="btn-pagina-proxima" class="btn-acao btn-link" style="padding: 10px 20px;" disabled>Próxima</button>
+            </div>
+        </div>
+    </div>
 
-    <script type="module" src="app.js"></script>
+    <div id="app-container" style="display: none;">
+        <div class="container">
+            
+            <div class="header-app">
+                <h1>Vinil Manager</h1>
+                <button id="btn-sair" class="btn-sair">Sair</button>
+            </div>
+
+            <div class="dashboard">
+                <div class="card">
+                    <h3>Faturamento</h3>
+                    <p id="valor-faturamento">R$ 0,00</p>
+                </div>
+                <div class="card">
+                    <h3>Custo Total</h3>
+                    <p id="valor-custo">R$ 0,00</p>
+                </div>
+                <div class="card">
+                    <h3>Lucro (R$)</h3>
+                    <p id="valor-lucro" style="color: #4caf50;">R$ 0,00</p>
+                </div>
+                <div class="card">
+                    <h3>Vendas</h3>
+                    <p id="qtd-vendas">0</p>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <button id="btn-toggle-historico" class="btn-historico">Ver Histórico de Vendas</button>
+            </div>
+            <div id="sessao-historico" class="sessao-historico" style="display: none;">
+                <h3>Últimas Vendas</h3>
+                <div id="lista-historico">
+                    <p style="color: #666; font-size: 0.9rem;">Carregando...</p>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-header-flex">
+                    <h2>ADICIONAR NOVO DISCO</h2>
+                    <button type="button" id="btn-abrir-discogs" class="btn-acao btn-vender" style="padding: 10px 15px; margin: 0; font-size: 1rem;">Pesquisar Álbum</button>
+                </div>
+
+                <form id="form-disco">
+                    <div class="envelope-form">
+                        <input type="hidden" id="url-capa" value="">
+                        <input type="hidden" id="ano-disco" value="">
+                        <input type="hidden" id="genero-disco" value="">
+                        <input type="hidden" id="formato-disco" value="">
+                        <input type="hidden" id="catno-disco" value="">
+                        <input type="hidden" id="link-discogs" value="">
+                        
+                        <img id="preview-capa" src="" alt="Capa" style="display: none;">
+                        
+                        <div class="inputs-direito">
+                            <input type="text" id="titulo" placeholder="Título do Álbum" required>
+                            <input type="text" id="artista" placeholder="Artista" required>
+                            
+                            <div class="seletores-condicao">
+                                <select id="condicao-midia">
+                                    <option value="">Mídia (Condição)</option>
+                                    <option value="M">Mint (M)</option>
+                                    <option value="NM">Near Mint (NM)</option>
+                                    <option value="VG+">Very Good Plus (VG+)</option>
+                                    <option value="VG">Very Good (VG)</option>
+                                    <option value="G+">Good Plus (G+)</option>
+                                </select>
+                                <select id="condicao-capa">
+                                    <option value="">Capa (Condição)</option>
+                                    <option value="M">Mint (M)</option>
+                                    <option value="NM">Near Mint (NM)</option>
+                                    <option value="VG+">Very Good Plus (VG+)</option>
+                                    <option value="VG">Very Good (VG)</option>
+                                    <option value="G+">Good Plus (G+)</option>
+                                    <option value="Genérica">Genérica</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="number" id="quantidade" placeholder="Qtd em Estoque" required min="1">
+                        <input type="number" id="preco-custo" placeholder="Preço Custo (Unitário)" required step="0.01">
+                        <input type="number" id="preco-venda" placeholder="Preço Venda (Unitário)" required step="0.01">
+                    </div>
+                    
+                    <button type="submit" id="btn-salvar" class="btn-principal">Salvar no Estoque</button>
+                </form>
+            </div>
+
+            <div class="controles-estoque">
+                <input type="text" id="busca-estoque" placeholder="Buscar no estoque (Título ou Artista)...">
+                <select id="ordenar-estoque">
+                    <option value="recentes">Mais Recentes</option>
+                    <option value="artista">Artista (A-Z)</option>
+                    <option value="preco-maior">Preço (Maior > Menor)</option>
+                    <option value="preco-menor">Preço (Menor > Maior)</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Capa</th>
+                            <th>Título / Info</th>
+                            <th>Artista / Condição</th>
+                            <th>Estoque</th>
+                            <th>Preço</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-estoque">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <div id="toast" class="toast"></div>
 
+    <script type="module" src="app.js"></script>
 </body>
-
 </html>
