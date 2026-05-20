@@ -495,7 +495,7 @@ function renderizarEstoque() {
 
     // 2. Ordena
     if (metodoOrdenacao === 'recentes') {
-        discosParaExibir.reverse(); 
+        discosParaExibir.sort((a, b) => (b.dataCriacao || 0) - (a.dataCriacao || 0));
     } else if (metodoOrdenacao === 'artista') {
         discosParaExibir.sort((a, b) => (a.artista || "").localeCompare(b.artista || ""));
     } else if (metodoOrdenacao === 'preco-maior') {
@@ -616,20 +616,21 @@ if (formDisco) {
         };
 
         const novoDisco = {
-            titulo,
-            artista,
-            capa: pegaValor('url-capa'),
-            ano: pegaValor('ano-disco'),
-            genero: pegaValor('genero-disco'),
-            formato: pegaValor('formato-disco'),
-            catno: pegaValor('catno-disco'),
-            linkDiscogs: pegaValor('link-discogs'),
-            condicaoMidia: pegaValor('condicao-midia'),
-            condicaoCapa: pegaValor('condicao-capa'),
-            quantidade: parseInt(pegaValor('quantidade') || 0),
-            precoCusto: parseFloat(pegaValor('preco-custo') || 0),
-            precoVenda: parseFloat(pegaValor('preco-venda') || 0)
-        };
+        titulo,
+        artista,
+        capa: pegaValor('url-capa'),
+        ano: pegaValor('ano-disco'),
+        genero: pegaValor('genero-disco'),
+        formato: pegaValor('formato-disco'),
+        catno: pegaValor('catno-disco'),
+        linkDiscogs: pegaValor('link-discogs'),
+        condicaoMidia: pegaValor('condicao-midia'),
+        condicaoCapa: pegaValor('condicao-capa'),
+        quantidade: parseInt(pegaValor('quantidade') || 0),
+        precoCusto: parseFloat(pegaValor('preco-custo') || 0),
+        precoVenda: parseFloat(pegaValor('preco-venda') || 0),
+        dataCriacao: Date.now()
+};  
 
         try {
             const docRef = await addDoc(colecaoEstoque, novoDisco);
