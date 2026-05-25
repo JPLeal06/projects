@@ -417,7 +417,7 @@ button {
 
 .controles-estoque select {
     flex: 1;
-    border: 1px solid #ff5722;
+    border: 1px solid #444;
 }
 
 /* Tabela */
