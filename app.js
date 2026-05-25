@@ -195,7 +195,7 @@ function renderizarHistorico() {
                 
                 ${(venda.condicaoMidia || venda.condicaoCapa) ? `
                 <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 8px; margin-top: -2px;">
-                    Mídia: <strong style="color: #fff;">${venda.condicaoMidia || '?'}</strong> | Capa: <strong style="color: #fff;">${venda.condicaoCapa || '?'}</strong>
+                    Mídia: <strong style="color: #4caf50;">${venda.condicaoMidia || '?'}</strong> | Capa: <strong style="color: #4caf50;">${venda.condicaoCapa || '?'}</strong>
                 </div>
                 ` : ''}
 
@@ -954,7 +954,7 @@ item.innerHTML = `
             <span style="color: #888; font-size: 0.7rem;">${dataFormatada}</span>
         </div>
         <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 5px;">
-            Mídia: <strong style="color: #fff;">${reg.condicaoMidia || '?'}</strong> | Capa: <strong style="color: #fff;">${reg.condicaoCapa || '?'}</strong>
+            Mídia: <strong style="color: #4caf50;">${reg.condicaoMidia || '?'}</strong> | Capa: <strong style="color: #4caf50;">${reg.condicaoCapa || '?'}</strong>
         </div>
         <div style="font-size: 0.85rem; color: #aaa;">
             Motivo: <span style="color: #f44336; font-style: italic;">"${reg.motivo}"</span>
@@ -1004,7 +1004,7 @@ item.innerHTML = `
             <span style="color: #888; font-size: 0.7rem;">${dataFormatada}</span>
         </div>
         <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 5px;">
-            Mídia: <strong style="color: #fff;">${reg.condicaoMidia || '-'}</strong> | Capa: <strong style="color: #fff;">${reg.condicaoCapa || '-'}</strong>
+            Mídia: <strong style="color: #4caf50;">${reg.condicaoMidia || '-'}</strong> | Capa: <strong style="color: #4caf50;">${reg.condicaoCapa || '-'}</strong>
         </div>
         <div style="font-size: 0.85rem; color: #aaa;">
             Motivo: <span style="color: #f44336; font-style: italic;">"${reg.motivo}"</span>
