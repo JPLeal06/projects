@@ -2,7 +2,7 @@
 // 1. IMPORTAÇÕES OBRIGATÓRIAS (TOPO ABSOLUTO)
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // ==========================================
@@ -26,7 +26,8 @@ const auth = getAuth(app);
 
 const colecaoEstoque = collection(db, "estoque");
 const colecaoVendas = collection(db, "vendas");
-const docTotais = doc(db, "relatorios", "totais");
+const colecaoExclusoes = collection(db, "exclusoes");
+const colecaoEstornos = collection(db, "estornos");
 
 // Variáveis de Estado Local
 let estoqueVinis = [];
@@ -100,6 +101,19 @@ const btnToggleHistorico = document.getElementById('btn-toggle-historico');
 const sessaoHistorico = document.getElementById('sessao-historico');
 const listaHistorico = document.getElementById('lista-historico');
 
+// NOVA LÓGICA: Variáveis para a busca do histórico
+let historicoVendas = []; 
+let termoFiltroHistorico = "";
+
+// Escutador do campo de busca que acabamos de criar no HTML
+const inputBuscaHistorico = document.getElementById('busca-historico');
+if (inputBuscaHistorico) {
+    inputBuscaHistorico.addEventListener('input', (e) => {
+        termoFiltroHistorico = e.target.value.toLowerCase();
+        renderizarHistorico(); // Filtra na tela em tempo real
+    });
+}
+
 if (btnToggleHistorico && sessaoHistorico) {
     btnToggleHistorico.addEventListener('click', async () => {
         if (sessaoHistorico.style.display === 'none') {
@@ -114,59 +128,108 @@ if (btnToggleHistorico && sessaoHistorico) {
 }
 
 async function carregarEMostrarHistorico() {
+    const lista = document.getElementById('lista-historico');
+    if (lista) lista.innerHTML = '<p style="color: #666;">Carregando...</p>';
+    
     try {
-        listaHistorico.innerHTML = '<p style="color: #666; font-size: 0.9rem;">Buscando vendas no banco de dados...</p>';
+        const snap = await getDocs(colecaoVendas);
         
-        const snapVendas = await getDocs(colecaoVendas);
-        let vendasArray = snapVendas.docs.map(d => ({ id: d.id, ...d.data() }));
+        // CORRIGIDO: Agora salvamos os dados no estado global para o filtro funcionar!
+        historicoVendas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        historicoVendas.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+        // Passa o bastão para a função que realmente renderiza
+        renderizarHistorico();
+    } catch (erro) {
+        console.error("Erro ao carregar histórico do Firebase:", erro);
+        if (lista) lista.innerHTML = '<p style="color: #f44336;">Erro ao carregar o histórico.</p>';
+    }
+}
+
+// Aplica o filtro de busca e desenha os cards na tela
+function renderizarHistorico() {
+    if (!listaHistorico) return;
+
+    if (historicoVendas.length === 0) {
+        listaHistorico.innerHTML = '<p style="color: #666; font-size: 0.9rem;">Nenhuma venda registrada ainda.</p>';
+        return;
+    }
+
+    // Filtra pelo título digitado
+    const vendasParaExibir = historicoVendas.filter(venda => {
+        const titulo = (venda.titulo || "").toLowerCase();
+        return titulo.includes(termoFiltroHistorico);
+    });
+
+    listaHistorico.innerHTML = ''; 
+
+    if (vendasParaExibir.length === 0) {
+        listaHistorico.innerHTML = '<p style="color: #aaa; font-size: 0.9rem; margin-top: 10px;">Nenhuma venda encontrada com esse termo.</p>';
+        return;
+    }
+
+    vendasParaExibir.forEach(venda => {
+        const dataObj = new Date(venda.data);
+        const dataFormatada = dataObj.toLocaleDateString('pt-BR') + ' às ' + dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         
-        vendasArray.sort((a, b) => new Date(b.data) - new Date(a.data));
+        const valorVenda = Number(venda.venda || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const lucroVenda = Number((venda.venda || 0) - (venda.custo || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-        if (vendasArray.length === 0) {
-            listaHistorico.innerHTML = '<p style="color: #666; font-size: 0.9rem;">Nenhuma venda registrada ainda.</p>';
-            return;
-        }
-
-        listaHistorico.innerHTML = ''; 
-
-        vendasArray.forEach(venda => {
-            const dataObj = new Date(venda.data);
-            const dataFormatada = dataObj.toLocaleDateString('pt-BR') + ' às ' + dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const item = document.createElement('div');
+        item.className = 'item-historico';
+        item.style.display = 'flex';
+        item.style.alignItems = 'center';
+        item.style.gap = '15px';
+        item.style.padding = '10px';
+        item.style.borderBottom = '1px solid #333';
+        
+        item.innerHTML = `
+            ${venda.capa ? `<img src="${venda.capa}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">` : 
+                           `<div style="width: 50px; height: 50px; background: #333; border-radius: 4px;"></div>`}
             
-            const valorVenda = Number(venda.venda || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            const lucroVenda = Number((venda.venda || 0) - (venda.custo || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-            const item = document.createElement('div');
-            item.className = 'item-historico';
-            
-            item.innerHTML = `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+            <div style="flex-grow: 1;">
+                <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px;">
                     <strong style="color: #fff; font-size: 0.95rem;">${venda.titulo || 'Disco sem título'}</strong>
-                    <span style="color: #888; font-size: 0.8rem;">${dataFormatada}</span>
+                    <span style="color: #888; font-size: 0.75rem;">${dataFormatada}</span>
                 </div>
+                
+                ${(venda.condicaoMidia || venda.condicaoCapa) ? `
+                <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 8px; margin-top: -2px;">
+                    Mídia: <strong style="color: #fff;">${venda.condicaoMidia || '?'}</strong> | Capa: <strong style="color: #fff;">${venda.condicaoCapa || '?'}</strong>
+                </div>
+                ` : ''}
+
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
                     <div>
                         <span style="color: #aaa;">Venda: <strong style="color: #fff;">${valorVenda}</strong></span> |
                         <span style="color: #aaa;">Lucro: <strong style="color: #4caf50;">${lucroVenda}</strong></span>
                     </div>
-                    <button class="btn-estornar" data-id="${venda.id}" style="background: #d32f2f; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; font-weight: bold; transition: 0.2s;">Estornar</button>
                 </div>
-            `;
-            listaHistorico.appendChild(item);
-        });
+            </div>
+            
+            <button class="btn-estornar" data-id="${venda.id}" style="background: #d32f2f; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; font-weight: bold; transition: 0.2s;">
+                Estornar
+            </button>
+        `;
+        listaHistorico.appendChild(item);
+    });
 
-        document.querySelectorAll('.btn-estornar').forEach(btn => {
-            btn.addEventListener('click', (e) => estornarVenda(e.target.dataset.id));
-        });
-
-    } catch (erro) {
-        console.error("Erro ao carregar histórico:", erro);
-        listaHistorico.innerHTML = '<p style="color: #f44336; font-size: 0.9rem;">Erro ao carregar o histórico.</p>';
-    }
+    // Escutador de eventos seguro para ambiente de Módulos (ES Modules)
+    document.querySelectorAll('.btn-estornar').forEach(btn => {
+        btn.addEventListener('click', () => estornarVenda(btn.dataset.id));
+    });
 }
 
 async function estornarVenda(idVenda) {
-    if (!confirm("Deseja realmente estornar esta venda? O valor cobrado será subtraído das finanças e 1 unidade voltará ao estoque.")) return;
+    const motivoEstorno = prompt("Qual o motivo do estorno desta venda?");
+    
+    // Se o usuário cancelar o prompt ou deixar vazio, cancela a ação
+    if (motivoEstorno === null || motivoEstorno.trim() === "") {
+        mostrarMensagem("Estorno cancelado: motivo é obrigatório.");
+        return;
+    }
+
+    if (!confirm("O valor cobrado será subtraído das finanças e 1 unidade voltará ao estoque. Confirmar estorno?")) return;
 
     try {
         const vendaRef = doc(db, "vendas", idVenda);
@@ -178,21 +241,21 @@ async function estornarVenda(idVenda) {
         }
         const dadosVenda = snapVenda.data();
 
-        await deleteDoc(vendaRef);
+        // SALVA O HISTÓRICO DO ESTORNO
+        const registroEstorno = {
+            titulo: dadosVenda.titulo || 'Disco sem título',
+            condicaoMidia: dadosVenda.condicaoMidia || '',
+            condicaoCapa: dadosVenda.condicaoCapa || '',
+            motivo: motivoEstorno,
+            dataEstorno: new Date().toISOString(),
+            vendaOriginalData: dadosVenda.data || '',
+            capa: dadosVenda.capa || ''
+        };
+        await addDoc(colecaoEstornos, registroEstorno);
 
-        const snapTotais = await getDoc(docTotais);
-        if (snapTotais.exists()) {
-            const totaisAtuais = snapTotais.data();
-            const novosTotais = {
-                faturamento: Math.max(0, Number(totaisAtuais.faturamento || 0) - Number(dadosVenda.venda || 0)),
-                custo: Math.max(0, Number(totaisAtuais.custo || 0) - Number(dadosVenda.custo || 0)),
-                qtdVendas: Math.max(0, Number(totaisAtuais.qtdVendas || 0) - 1)
-            };
-            await setDoc(docTotais, novosTotais);
-            
-            const novoLucro = novosTotais.faturamento - novosTotais.custo;
-            atualizarDashboard(novosTotais.faturamento, novosTotais.custo, novoLucro, novosTotais.qtdVendas);
-        }
+        // Remove do banco de dados de vendas
+        await deleteDoc(vendaRef);
+        await atualizarDashboardPeriodos();
 
         const discoNoEstoque = estoqueVinis.find(d => (d.titulo || "").toLowerCase() === (dadosVenda.titulo || "").toLowerCase());
         
@@ -204,9 +267,9 @@ async function estornarVenda(idVenda) {
             
             discoNoEstoque.quantidade = novaQtd;
             renderizarEstoque();
-            mostrarMensagem("Venda desfeita e unidade devolvida ao estoque!");
+            mostrarMensagem("Venda desfeita, motivo registrado e disco devolvido ao estoque!");
         } else {
-            mostrarMensagem("Venda removida das finanças! (O disco não voltou ao estoque porque foi excluído da loja).");
+            mostrarMensagem("Estorno registrado! (O disco não voltou ao estoque porque foi excluído da loja).");
         }
 
         await carregarEMostrarHistorico();
@@ -226,7 +289,6 @@ const btnFecharModal = document.getElementById('btn-fechar-modal');
 const inputModalDiscogs = document.getElementById('input-modal-discogs');
 const resultadosModal = document.getElementById('resultados-modal');
 
-// Elementos da Paginação
 const paginacaoContainer = document.getElementById('paginacao-discogs');
 const btnPaginaAnterior = document.getElementById('btn-pagina-anterior');
 const btnPaginaProxima = document.getElementById('btn-pagina-proxima');
@@ -251,11 +313,10 @@ if (btnFecharModal && modalDiscogs) {
     });
 }
 
-// Digitação no campo de busca
 if (inputModalDiscogs) {
     inputModalDiscogs.addEventListener('input', (e) => {
         termoBuscaAtual = e.target.value.trim();
-        paginaAtualDiscogs = 1; // Sempre volta para a página 1 numa busca nova
+        paginaAtualDiscogs = 1; 
         
         clearTimeout(timerBuscaDiscogs);
 
@@ -273,7 +334,6 @@ if (inputModalDiscogs) {
     });
 }
 
-// Botões de Navegação (Página Anterior e Próxima)
 if (btnPaginaAnterior) {
     btnPaginaAnterior.addEventListener('click', () => {
         if (paginaAtualDiscogs > 1) {
@@ -292,7 +352,6 @@ if (btnPaginaProxima) {
     });
 }
 
-// Função de Busca Principal Adaptada
 async function executarBuscaDiscogsModal(termo, pagina) {
     try {
         resultadosModal.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #aaa; margin-top: 40px;">Carregando página ' + pagina + '...</p>';
@@ -319,7 +378,6 @@ async function executarBuscaDiscogsModal(termo, pagina) {
                 const titulo = partesTitulo[1] || resultado.title;
                 
                 const ano = resultado.year || '';
-                // PEGA TODOS OS GÊNEROS AQUI
                 const genero = (resultado.genre && resultado.genre.length > 0) ? resultado.genre.join(', ') : '';
                 const urlDaCapa = resultado.cover_image || ''; 
                 
@@ -410,14 +468,14 @@ if (selectOrdenacao) {
 }
 
 // ==========================================
-// 7. CARREGAMENTO E DASHBOARD
+// 7. CARREGAMENTO E DASHBOARD (DINÂMICO / PERÍODOS)
 // ==========================================
 async function carregarDados() {
     try {
         const snapshotEstoque = await getDocs(colecaoEstoque);
         estoqueVinis = snapshotEstoque.docs.map(d => ({ id: d.id, ...d.data() }));
 
-        await carregarTotais();
+        await atualizarDashboardPeriodos();
         renderizarEstoque();
     } catch (erro) {
         console.error("Erro ao carregar dados:", erro);
@@ -426,55 +484,77 @@ async function carregarDados() {
     }
 }
 
-async function carregarTotais() {
-    try {
-        const snap = await getDoc(docTotais);
-        if (snap.exists()) {
-            const { faturamento = 0, custo = 0, qtdVendas = 0 } = snap.data();
-            const lucro = faturamento - custo; 
-            atualizarDashboard(faturamento, custo, lucro, qtdVendas); 
-        } else {
-            await recalcularTotais();
-        }
-    } catch (erro) {
-        console.error("Erro ao carregar totais:", erro);
-    }
-}
-
-async function recalcularTotais() {
+async function atualizarDashboardPeriodos() {
     try {
         const snapshotVendas = await getDocs(colecaoVendas);
-        let faturamento = 0, custo = 0;
-        
-        snapshotVendas.forEach(d => {
-            faturamento += Number(d.data().venda || 0);
-            custo += Number(d.data().custo || 0);
+        const vendasArray = snapshotVendas.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        const agora = new Date();
+        const hojeStr = agora.toLocaleDateString('pt-BR');
+        const mesAtual = agora.getMonth();
+        const anoAtual = agora.getFullYear();
+
+        const periodos = {
+            dia: { faturamento: 0, custo: 0, vendas: 0 },
+            mes: { faturamento: 0, custo: 0, vendas: 0 },
+            ano: { faturamento: 0, custo: 0, vendas: 0 },
+            total: { faturamento: 0, custo: 0, vendas: 0 }
+        };
+
+        vendasArray.forEach(venda => {
+            const dataVenda = new Date(venda.data);
+            const valorVenda = Number(venda.venda || 0);
+            const valorCusto = Number(venda.custo || 0);
+
+            // Totalizador Geral
+            periodos.total.faturamento += valorVenda;
+            periodos.total.custo += valorCusto;
+            periodos.total.vendas += 1;
+
+            // Totalizador do Ano Atual
+            if (dataVenda.getFullYear() === anoAtual) {
+                periodos.ano.faturamento += valorVenda;
+                periodos.ano.custo += valorCusto;
+                periodos.ano.vendas += 1;
+
+                // Totalizador do Mês Atual
+                if (dataVenda.getMonth() === mesAtual) {
+                    periodos.mes.faturamento += valorVenda;
+                    periodos.mes.custo += valorCusto;
+                    periodos.mes.vendas += 1;
+                }
+            }
+
+            // Totalizador de Hoje
+            if (dataVenda.toLocaleDateString('pt-BR') === hojeStr) {
+                periodos.dia.faturamento += valorVenda;
+                periodos.dia.custo += valorCusto;
+                periodos.dia.vendas += 1;
+            }
         });
-        
-        const qtdVendas = snapshotVendas.size;
-        const lucro = faturamento - custo; 
-        
-        await setDoc(docTotais, { faturamento, custo, qtdVendas });
-        atualizarDashboard(faturamento, custo, lucro, qtdVendas);
-    } catch(erro) {
-        console.error("Erro ao recalcular:", erro);
+
+        renderizarMetricasPeriodo('dia', periodos.dia);
+        renderizarMetricasPeriodo('mes', periodos.mes);
+        renderizarMetricasPeriodo('ano', periodos.ano);
+        renderizarMetricasPeriodo('total', periodos.total);
+
+    } catch (erro) {
+        console.error("Erro ao calcular métricas:", erro);
     }
 }
 
-function atualizarDashboard(faturamento, custo, lucro, qtdVendas) {
-    const els = {
-        'valor-faturamento': faturamento,
-        'valor-custo': custo,
-        'valor-lucro': lucro
-    };
-    
-    for (const [id, valor] of Object.entries(els)) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    }
-    
-    const elQtd = document.getElementById('qtd-vendas');
-    if (elQtd) elQtd.textContent = qtdVendas;
+function renderizarMetricasPeriodo(prefixo, dados) {
+    const lucro = dados.faturamento - dados.custo;
+
+    const elFaturamento = document.getElementById(`${prefixo}-faturamento`);
+    const elCusto = document.getElementById(`${prefixo}-custo`);
+    const elLucro = document.getElementById(`${prefixo}-lucro`);
+    const elQtd = document.getElementById(`${prefixo}-vendas`);
+
+    if (elFaturamento) elFaturamento.textContent = dados.faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    if (elCusto) elCusto.textContent = dados.custo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    if (elLucro) elLucro.textContent = lucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    if (elQtd) elQtd.textContent = dados.vendas;
 }
 
 // ==========================================
@@ -486,14 +566,12 @@ function renderizarEstoque() {
     
     tabela.innerHTML = '';
 
-    // 1. Filtra Textualmente
     let discosParaExibir = estoqueVinis.filter(disco => {
         const titulo = (disco.titulo || "").toLowerCase();
         const artista = (disco.artista || "").toLowerCase();
         return titulo.includes(termoFiltroEstoque) || artista.includes(termoFiltroEstoque);
     });
 
-    // 2. Ordena
     if (metodoOrdenacao === 'recentes') {
         discosParaExibir.sort((a, b) => (b.dataCriacao || 0) - (a.dataCriacao || 0));
     } else if (metodoOrdenacao === 'artista') {
@@ -524,7 +602,6 @@ function renderizarEstoque() {
             ? `<img src="${disco.capa}" style="width: 55px; height: 55px; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.5);">` 
             : `<div style="width: 55px; height: 55px; background: #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px;">Sem Capa</div>`;
 
-        // SEPARA OS GÊNEROS E CRIA MÚLTIPLOS BADGES AQUI
         const generosHtml = disco.genero 
             ? disco.genero.split(',').map(g => `<span class="badge genero">${g.trim()}</span>`).join(' ') 
             : '';
@@ -564,6 +641,7 @@ function renderizarEstoque() {
                             data-id="${disco.id}"
                             ${disco.quantidade === 0 ? 'disabled' : ''}>Vender</button>
                     ${btnDiscogsHtml}
+                    <button class="btn-acao btn-editar" data-id="${disco.id}">Editar</button>
                     <button class="btn-acao btn-remover" data-id="${disco.id}">Excluir</button>
                 </div>
             </td>
@@ -573,6 +651,10 @@ function renderizarEstoque() {
 
     document.querySelectorAll('.btn-vender').forEach(btn => {
         btn.addEventListener('click', (e) => venderDisco(e.target.dataset.id));
+    });
+    // NOVO ESCUTADOR ADICIONADO AQUI
+    document.querySelectorAll('.btn-editar').forEach(btn => {
+        btn.addEventListener('click', (e) => alterarPrecoDisco(e.target.dataset.id));
     });
     document.querySelectorAll('.btn-remover').forEach(btn => {
         btn.addEventListener('click', (e) => removerDisco(e.target.dataset.id));
@@ -616,28 +698,27 @@ if (formDisco) {
         };
 
         const novoDisco = {
-        titulo,
-        artista,
-        capa: pegaValor('url-capa'),
-        ano: pegaValor('ano-disco'),
-        genero: pegaValor('genero-disco'),
-        formato: pegaValor('formato-disco'),
-        catno: pegaValor('catno-disco'),
-        linkDiscogs: pegaValor('link-discogs'),
-        condicaoMidia: pegaValor('condicao-midia'),
-        condicaoCapa: pegaValor('condicao-capa'),
-        quantidade: parseInt(pegaValor('quantidade') || 0),
-        precoCusto: parseFloat(pegaValor('preco-custo') || 0),
-        precoVenda: parseFloat(pegaValor('preco-venda') || 0),
-        dataCriacao: Date.now()
-};  
+            titulo,
+            artista,
+            capa: pegaValor('url-capa'),
+            ano: pegaValor('ano-disco'),
+            genero: pegaValor('genero-disco'),
+            formato: pegaValor('formato-disco'),
+            catno: pegaValor('catno-disco'),
+            linkDiscogs: pegaValor('link-discogs'),
+            condicaoMidia: pegaValor('condicao-midia'),
+            condicaoCapa: pegaValor('condicao-capa'),
+            quantidade: parseInt(pegaValor('quantidade') || 0),
+            precoCusto: parseFloat(pegaValor('preco-custo') || 0),
+            precoVenda: parseFloat(pegaValor('preco-venda') || 0),
+            dataCriacao: Date.now()
+        };  
 
         try {
             const docRef = await addDoc(colecaoEstoque, novoDisco);
             estoqueVinis.push({ id: docRef.id, ...novoDisco });
             
             renderizarEstoque();
-            
             formDisco.reset();
             
             ['url-capa', 'ano-disco', 'genero-disco', 'formato-disco', 'catno-disco', 'link-discogs'].forEach(id => {
@@ -678,25 +759,18 @@ async function venderDisco(idDisco) {
             titulo: disco.titulo || 'Disco sem título',
             custo: Number(disco.precoCusto || 0),
             venda: Number(disco.precoVenda || 0),
-            data: new Date().toISOString()
+            // Salvando a condição no registro de venda também
+            condicaoMidia: disco.condicaoMidia || '',
+            condicaoCapa: disco.condicaoCapa || '',
+            data: new Date().toISOString(),
+            capa: disco.capa || ''
         };
         await addDoc(colecaoVendas, novaVenda);
 
-        const snapTotais = await getDoc(docTotais);
-        const totaisAtuais = snapTotais.exists() ? snapTotais.data() : { faturamento: 0, custo: 0, qtdVendas: 0 };
-        
-        const novosTotais = {
-            faturamento: Number(totaisAtuais.faturamento || 0) + Number(disco.precoVenda || 0),
-            custo: Number(totaisAtuais.custo || 0) + Number(disco.precoCusto || 0),
-            qtdVendas: Number(totaisAtuais.qtdVendas || 0) + 1
-        };
-        
-        await setDoc(docTotais, novosTotais);
+        // Recalcula o dashboard dinamicamente por períodos
+        await atualizarDashboardPeriodos();
 
         estoqueVinis[discoIndex].quantidade -= 1;
-        
-        const novoLucro = novosTotais.faturamento - novosTotais.custo;
-        atualizarDashboard(novosTotais.faturamento, novosTotais.custo, novoLucro, novosTotais.qtdVendas);
         
         const sessaoHistorico = document.getElementById('sessao-historico');
         if (sessaoHistorico && sessaoHistorico.style.display === 'block') {
@@ -711,20 +785,86 @@ async function venderDisco(idDisco) {
     }
 }
 
-// ==========================================
-// 11. EXCLUIR DISCO DO ESTOQUE
-// ==========================================
+async function alterarPrecoDisco(id) {
+    // 1. Encontra o disco no estoque local para saber o preço atual e o título
+    const disco = estoqueVinis.find(d => d.id === id);
+    if (!disco) return;
+
+    // 2. Abre uma janela (prompt) perguntando o novo valor, já sugerindo o preço atual
+    const novoPrecoTexto = prompt(`Digite o novo preço de venda para o disco "${disco.titulo}":`, disco.precoVenda);
+    
+    // Se o usuário clicar em "Cancelar" ou deixar em branco, interrompe a função
+    if (novoPrecoTexto === null || novoPrecoTexto.trim() === "") return;
+
+    // 3. Trata o texto digitado (substitui vírgula por ponto para o JavaScript entender)
+    const novoPreco = Number(novoPrecoTexto.replace(',', '.'));
+
+    // Validação elementar para garantir que é um número válido
+    if (isNaN(novoPreco) || novoPreco < 0) {
+        alert("Por favor, digite um valor numérico válido.");
+        return;
+    }
+
+    try {
+        // 4. Atualiza diretamente no Firebase Firestore
+        const docRef = doc(db, "estoque", id); 
+        await updateDoc(docRef, {
+            precoVenda: novoPreco
+        });
+
+        // CORRIGIDO: Usando a função correta do seu sistema
+        mostrarMensagem(`Preço atualizado para R$ ${novoPreco.toFixed(2)}!`);
+        
+        // 5. Atualiza o array local para refletir a mudança imediatamente na tela
+        disco.precoVenda = novoPreco;
+        renderizarEstoque();
+
+    } catch (erro) {
+        console.error("Erro ao atualizar o preço no Firebase:", erro);
+        alert("Não foi possível salvar o novo preço no banco de dados.");
+    }
+}
+
 async function removerDisco(idDisco) {
-    if (confirm('Tem certeza que deseja remover este disco permanentemente do estoque?')) {
-        try {
-            await deleteDoc(doc(db, "estoque", idDisco));
-            estoqueVinis = estoqueVinis.filter(d => d.id !== idDisco);
-            renderizarEstoque();
-            mostrarMensagem("Disco removido.");
-        } catch (erro) {
-            console.error("Erro ao excluir:", erro);
-            alert("Erro ao excluir o disco do banco de dados.");
-        }
+    const disco = estoqueVinis.find(d => d.id === idDisco);
+    if (!disco) return;
+
+    const motivoExclusao = prompt(`Qual o motivo de excluir o disco "${disco.titulo}" do acervo?`);
+    
+    // Se o usuário cancelar ou deixar em branco, não faz nada
+    if (motivoExclusao === null || motivoExclusao.trim() === "") {
+        mostrarMensagem("Exclusão cancelada: o motivo é obrigatório.");
+        return;
+    }
+
+    if (!confirm(`Tem certeza que deseja apagar "${disco.titulo}" do sistema permanentemente?`)) return;
+
+    try {
+        // SALVA O HISTÓRICO DA EXCLUSÃO
+        const registroExclusao = {
+            titulo: disco.titulo || 'Sem Título',
+            artista: disco.artista || 'Sem Artista',
+            condicaoMidia: disco.condicaoMidia || '',
+            condicaoCapa: disco.condicaoCapa || '',
+            motivo: motivoExclusao,
+            dataExclusao: new Date().toISOString(),
+            capa: disco.capa || ''
+        };
+        await addDoc(colecaoExclusoes, registroExclusao);
+
+        // Deleta de fato do estoque
+        const discoRef = doc(db, "estoque", idDisco);
+        await deleteDoc(discoRef);
+
+        // Remove do array local e atualiza a tela
+        estoqueVinis = estoqueVinis.filter(d => d.id !== idDisco);
+        renderizarEstoque();
+
+        mostrarMensagem("Disco removido e motivo arquivado no histórico de exclusões!");
+
+    } catch (erro) {
+        console.error("Erro ao remover disco:", erro);
+        alert("Erro ao tentar remover o disco do banco de dados.");
     }
 }
 
@@ -737,4 +877,144 @@ function mostrarMensagem(texto) {
     toast.textContent = texto;
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 3000);
+}
+
+// ==========================================
+// 13. REGISTROS DE EXCLUSÃO E ESTORNO
+// ==========================================
+const btnToggleExclusoes = document.getElementById('btn-toggle-exclusoes');
+const sessaoExclusoes = document.getElementById('sessao-exclusoes');
+const listaExclusoes = document.getElementById('lista-exclusoes');
+
+const btnToggleEstornos = document.getElementById('btn-toggle-estornos');
+const sessaoEstornos = document.getElementById('sessao-estornos');
+const listaEstornos = document.getElementById('lista-estornos');
+
+// Botão de Exclusões
+if (btnToggleExclusoes) {
+    btnToggleExclusoes.addEventListener('click', async () => {
+        if (sessaoExclusoes.style.display === 'none' || sessaoExclusoes.style.display === '') {
+            sessaoExclusoes.style.display = 'block';
+            btnToggleExclusoes.textContent = "Esconder Exclusões";
+            await carregarExclusoes();
+        } else {
+            sessaoExclusoes.style.display = 'none';
+            btnToggleExclusoes.textContent = "Registros de Exclusão";
+        }
+    });
+}
+
+// Botão de Estornos
+if (btnToggleEstornos) {
+    btnToggleEstornos.addEventListener('click', async () => {
+        if (sessaoEstornos.style.display === 'none' || sessaoEstornos.style.display === '') {
+            sessaoEstornos.style.display = 'block';
+            btnToggleEstornos.textContent = "Esconder Estornos";
+            await carregarEstornos();
+        } else {
+            sessaoEstornos.style.display = 'none';
+            btnToggleEstornos.textContent = "Registros de Estorno";
+        }
+    });
+}
+
+// Buscar Exclusões
+async function carregarExclusoes() {
+    if (!listaExclusoes) return;
+    listaExclusoes.innerHTML = '<p style="color: #666; font-size: 0.9rem;">Buscando registros...</p>';
+    try {
+        const snap = await getDocs(colecaoExclusoes);
+        const registros = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        registros.sort((a, b) => new Date(b.dataExclusao) - new Date(a.dataExclusao));
+        
+        listaExclusoes.innerHTML = '';
+        if (registros.length === 0) {
+            listaExclusoes.innerHTML = '<p style="color: #666; font-size: 0.9rem;">Nenhuma exclusão registrada.</p>';
+            return;
+        }
+
+        registros.forEach(reg => {
+            // ADICIONADO: Formatação da data para ficar igual aos estornos
+            const dataObj = new Date(reg.dataExclusao);
+            const dataFormatada = dataObj.toLocaleDateString('pt-BR') + ' às ' + dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+            const item = document.createElement('div');
+item.className = 'item-historico';
+item.style.display = 'flex';
+item.style.alignItems = 'center';
+item.style.gap = '10px';
+item.style.padding = '10px';
+
+item.innerHTML = `
+    ${reg.capa ? `<img src="${reg.capa}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">` : 
+                 `<div style="width: 50px; height: 50px; background: #333; border-radius: 4px;"></div>`}
+    <div style="flex-grow: 1;">
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px;">
+            <strong style="color: #fff; font-size: 0.95rem;">${reg.titulo}</strong>
+            <span style="color: #888; font-size: 0.7rem;">${dataFormatada}</span>
+        </div>
+        <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 5px;">
+            Mídia: <strong style="color: #fff;">${reg.condicaoMidia || '?'}</strong> | Capa: <strong style="color: #fff;">${reg.condicaoCapa || '?'}</strong>
+        </div>
+        <div style="font-size: 0.85rem; color: #aaa;">
+            Motivo: <span style="color: #f44336; font-style: italic;">"${reg.motivo}"</span>
+        </div>
+    </div>
+`;
+listaExclusoes.appendChild(item); 
+        });
+    } catch (erro) {
+        console.error("Erro ao carregar exclusões:", erro);
+        listaExclusoes.innerHTML = '<p style="color: #f44336; font-size: 0.9rem;">Erro ao carregar os registros.</p>';
+    }
+}
+
+// Buscar Estornos
+async function carregarEstornos() {
+    if (!listaEstornos) return;
+    listaEstornos.innerHTML = '<p style="color: #666; font-size: 0.9rem;">Buscando registros...</p>';
+    try {
+        const snap = await getDocs(colecaoEstornos);
+        const registros = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        registros.sort((a, b) => new Date(b.dataEstorno) - new Date(a.dataEstorno));
+        
+        listaEstornos.innerHTML = '';
+        if (registros.length === 0) {
+            listaEstornos.innerHTML = '<p style="color: #666; font-size: 0.9rem;">Nenhum estorno registrado.</p>';
+            return;
+        }
+
+        registros.forEach(reg => {
+            const dataObj = new Date(reg.dataEstorno);
+            const dataFormatada = dataObj.toLocaleDateString('pt-BR') + ' às ' + dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+            
+            const item = document.createElement('div');
+item.className = 'item-historico';
+item.style.display = 'flex';
+item.style.alignItems = 'center';
+item.style.gap = '10px';
+item.style.padding = '10px';
+
+item.innerHTML = `
+    ${reg.capa ? `<img src="${reg.capa}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">` : 
+                 `<div style="width: 50px; height: 50px; background: #333; border-radius: 4px;"></div>`}
+    <div style="flex-grow: 1;">
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px;">
+            <strong style="color: #fff; font-size: 0.95rem;">${reg.titulo}</strong>
+            <span style="color: #888; font-size: 0.7rem;">${dataFormatada}</span>
+        </div>
+        <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 5px;">
+            Mídia: <strong style="color: #fff;">${reg.condicaoMidia || '-'}</strong> | Capa: <strong style="color: #fff;">${reg.condicaoCapa || '-'}</strong>
+        </div>
+        <div style="font-size: 0.85rem; color: #aaa;">
+            Motivo: <span style="color: #f44336; font-style: italic;">"${reg.motivo}"</span>
+        </div>
+    </div>
+`;
+listaEstornos.appendChild(item);
+        });
+    } catch (erro) {
+        console.error("Erro ao carregar estornos:", erro);
+        listaEstornos.innerHTML = '<p style="color: #f44336; font-size: 0.9rem;">Erro ao carregar os registros.</p>';
+    }
 }
