@@ -589,7 +589,10 @@ function renderizarEstoque() {
 
     discosParaExibir.forEach((disco) => {
         const linha = document.createElement('tr');
+        
+        // Formata os dois valores em moeda (BRL)
         const precoFormatado = Number(disco.precoVenda || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const custoFormatado = Number(disco.precoCusto || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         
         let statusEstoque = '';
         if (disco.quantidade === 0) {
@@ -634,7 +637,12 @@ function renderizarEstoque() {
                 ${condicao}
             </td>
             <td data-label="Estoque">${statusEstoque}</td>
-            <td data-label="Preço">${precoFormatado}</td>
+            
+            <td data-label="Preço">
+                <div style="font-weight: bold; color: #fff;">${precoFormatado}</div>
+                <div style="font-size: 0.75rem; color: #ff9800; margin-top: 4px; white-space: nowrap;">Custo: ${custoFormatado}</div>
+            </td>
+            
             <td data-label="Ações">
                 <div class="acoes-tabela">
                     <button class="btn-acao btn-vender ${disco.quantidade === 0 ? 'btn-disabled' : ''}"
@@ -652,7 +660,6 @@ function renderizarEstoque() {
     document.querySelectorAll('.btn-vender').forEach(btn => {
         btn.addEventListener('click', (e) => venderDisco(e.target.dataset.id));
     });
-    // NOVO ESCUTADOR ADICIONADO AQUI
     document.querySelectorAll('.btn-editar').forEach(btn => {
         btn.addEventListener('click', (e) => alterarPrecoDisco(e.target.dataset.id));
     });
