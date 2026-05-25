@@ -412,7 +412,7 @@ button {
 
 .controles-estoque input {
     flex: 2;
-    border: 1px solid #ff5722;
+    border: 1px solid #666;
 }
 
 .controles-estoque select {
