@@ -599,9 +599,9 @@ td {
     }
 }
 
-input[type="text"]:focus, 
-input[type="number"]:focus, 
-select:focus {
-    border-color: #ff5722 !important;
+/* Borda laranja ao clicar nos campos de busca do estoque e histórico */
+.controles-estoque input:focus,
+input[type="text"]:focus {
+    border: 1px solid #ff5722 !important;
     outline: none !important;
 }
