@@ -605,3 +605,10 @@ input[type="text"]:focus {
     border: 1px solid #ff5722 !important;
     outline: none !important;
 }
+
+/* Borda laranja ao clicar nos campos de seleção (select) do estoque */
+.controles-estoque select:focus,
+select:focus {
+    border-color: #ff5722 !important;
+    outline: none !important;
+}
