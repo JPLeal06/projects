@@ -130,6 +130,11 @@ body {
     color: #fff;
     margin-bottom: 5px;
     line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .card-info span {
@@ -214,10 +219,10 @@ body {
     border-color: #cc3300;
 }
 
-/* Dashboard */
+/* Dashboard Novo */
 .dashboard {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 15px;
     margin-bottom: 20px;
 }
@@ -227,20 +232,39 @@ body {
     padding: 20px;
     border-radius: 8px;
     border: 1px solid #333;
-    text-align: center;
 }
 
-.card h3 {
-    font-size: 0.9rem;
-    color: #888;
-    margin-bottom: 10px;
+.card-periodo {
+    text-align: left;
+}
+
+.card-periodo h3 {
+    font-size: 1.1rem;
+    color: #ff5722; /* Laranja da identidade original */
+    margin-bottom: 15px;
     text-transform: uppercase;
+    border-bottom: 1px solid #333;
+    padding-bottom: 8px;
 }
 
-.card p {
-    font-size: 1.5rem;
-    font-weight: bold;
+.linha-dado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
 }
+
+.linha-dado span {
+    color: #aaa;
+}
+
+.linha-dado strong {
+    color: #fff;
+}
+
+.text-red { color: #f44336 !important; }
+.text-green { color: #4caf50 !important; }
 
 /* Histórico de Vendas */
 .btn-historico {
