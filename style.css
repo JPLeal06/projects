@@ -487,10 +487,13 @@ td {
 }
 
 /* Botões Tabela */
+
 .acoes-tabela {
     display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
+    flex-direction: column; /* Força os botões a ficarem um embaixo do outro */
+    gap: 8px; /* Dá um espacinho organizado entre os botões */
+    align-items: stretch; /* Faz os botões esticarem para preencher o espaço */
+    width: 100%;
 }
 
 .btn-acao {
