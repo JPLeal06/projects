@@ -646,19 +646,23 @@ function renderizarEstoque() {
             <td data-label="Ações">
                 <div class="acoes-tabela">
                     <button class="btn-acao btn-vender ${disco.quantidade === 0 ? 'btn-disabled' : ''}"
-                            data-id="${disco.id}"
-                            ${disco.quantidade === 0 ? 'disabled' : ''}>Vender</button>
+                        data-id="${disco.id}"
+                        ${disco.quantidade === 0 ? 'disabled' : ''}>Vender</button>
                     ${btnDiscogsHtml}
                     <button class="btn-acao btn-editar" data-id="${disco.id}">Editar</button>
+                    <button class="btn-acao btn-qtd" data-id="${disco.id}" style="background: #ff5722;">Qtd</button>
                     <button class="btn-acao btn-remover" data-id="${disco.id}">Excluir</button>
                 </div>
             </td>
-        `;
+        `;  
         tabela.appendChild(linha);
     });
 
     document.querySelectorAll('.btn-vender').forEach(btn => {
         btn.addEventListener('click', (e) => venderDisco(e.target.dataset.id));
+    });
+    document.querySelectorAll('.btn-qtd').forEach(btn => {
+        btn.addEventListener('click', (e) => alterarQuantidadeDisco(e.target.dataset.id));
     });
     document.querySelectorAll('.btn-editar').forEach(btn => {
         btn.addEventListener('click', (e) => alterarPrecoDisco(e.target.dataset.id));
@@ -668,7 +672,7 @@ function renderizarEstoque() {
     });
 }
 
-// ==========================================
+// ==========================================   
 // 9. SALVAR NO ESTOQUE 
 // ==========================================
 const formDisco = document.getElementById('form-disco'); 
@@ -829,6 +833,46 @@ async function alterarPrecoDisco(id) {
     } catch (erro) {
         console.error("Erro ao atualizar o preço no Firebase:", erro);
         alert("Não foi possível salvar o novo preço no banco de dados.");
+    }
+}
+
+async function alterarQuantidadeDisco(id) {
+    // 1. Encontra o disco no estoque local para saber a quantidade atual e o título
+    const disco = estoqueVinis.find(d => d.id === id);
+    if (!disco) return;
+
+    // 2. Abre uma janela de prompt perguntando o novo estoque, sugerindo o valor atual
+    const novaQtdTexto = prompt(`Digite a nova quantidade em estoque para o disco "${disco.titulo}":`, disco.quantidade);
+    
+    // Se o usuário clicar em "Cancelar" ou deixar em branco, interrompe a função
+    if (novaQtdTexto === null || novaQtdTexto.trim() === "") return;
+
+    // 3. Converte o texto digitado para um número inteiro
+    const novaQtd = parseInt(novaQtdTexto.trim(), 10);
+
+    // Validação para garantir que é um número válido e não-negativo
+    if (isNaN(novaQtd) || novaQtd < 0) {
+        alert("Por favor, digite uma quantidade válida (número inteiro maior ou igual a 0).");
+        return;
+    }
+
+    try {
+        // 4. Atualiza a propriedade 'quantidade' diretamente no Firebase Firestore
+        const docRef = doc(db, "estoque", id); 
+        await updateDoc(docRef, {
+            quantidade: novaQtd
+        });
+
+        // Exibe o balão de confirmação do seu sistema
+        mostrarMensagem(`Estoque de "${disco.titulo}" atualizado para ${novaQtd} unidades!`);
+        
+        // 5. Atualiza o array local e renderiza a tela novamente para atualizar o status ("Esgotado", etc.)
+        disco.quantidade = novaQtd;
+        renderizarEstoque();
+
+    } catch (erro) {
+        console.error("Erro ao atualizar a quantidade no Firebase:", erro);
+        alert("Não foi possível salvar a nova quantidade no banco de dados.");
     }
 }
 
